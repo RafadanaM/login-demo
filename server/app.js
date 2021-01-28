@@ -25,7 +25,7 @@ app.use(
     secret: "secretKey", //change if you want to deploy
     resave: false,
     saveUninitialized: false,
-    cookie: { expires: 60 * 60 * 24 },
+    cookie: { expires: 60 * 60 * 24 }, //expires in 2 hours
   })
 );
 
@@ -35,16 +35,20 @@ app.post("/api/register", (req, res) => {
   const password = req.body.password;
   bcrypt.hash(password, saltRounds, (err, hash) => {
     if (err) {
-      return res.send({ message: "Something happened" });
+      return res.send({ success: false, message: "Something happened" });
     }
     const registerQuery =
       "INSERT INTO USERS (username, password) VALUES($1,$2)";
     pool.query(registerQuery, [username, hash], (err, result) => {
       if (err) {
         if (err.code === "23505")
-          return res.send({ message: "username already exists!!" });
+          return res.send({
+            success: false,
+            message: "username already exists!!",
+          });
       }
       return res.send({
+        success: true,
         message: "registration success",
       });
     });
