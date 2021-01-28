@@ -12,7 +12,7 @@ app.use(express.json());
 //middleware
 app.use(
   cors({
-    origin: ["https://localhost:3000"],
+    origin: "http://localhost:3000", //change if you want to deploy
     methods: ["GET", "POST"],
     credentials: true,
   })
@@ -22,7 +22,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(
   session({
     key: "userID",
-    secret: "secretKey",
+    secret: "secretKey", //change if you want to deploy
     resave: false,
     saveUninitialized: false,
     cookie: { expires: 60 * 60 * 24 },
