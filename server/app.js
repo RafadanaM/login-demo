@@ -2,10 +2,12 @@ const express = require("express");
 const cors = require("cors");
 const pool = require("./connection");
 const bcrypt = require("bcrypt");
-const saltRounds = 10;
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
 const session = require("express-session");
+const jwt = require("jsonwebtoken");
+
+const saltRounds = 10;
 
 const app = express();
 app.use(express.json());
@@ -28,6 +30,24 @@ app.use(
     cookie: { expires: 60 * 60 * 24 }, //expires in 2 hours
   })
 );
+
+const verifyJWT = (req, res, next) => {
+  const token = req.headers["x-access-token"];
+  if (!token) {
+    return res.send("No Token");
+  } else {
+    jwt.verify(token, "jwtSecret", (err, decoded) => {
+      if (err) {
+        return res.send({ auth: false, message: "Authentication failed" });
+      } else {
+        console.log(decoded);
+        req.id = decoded.id;
+        req.username = decoded.username;
+        next();
+      }
+    });
+  }
+};
 
 //Routes
 app.post("/api/register", (req, res) => {
@@ -67,9 +87,13 @@ app.post("/api/login", (req, res) => {
     if (result.rows.length > 0) {
       bcrypt.compare(password, result.rows[0].password, (err, response) => {
         if (response) {
+          const id = result.rows[0].id_user;
+          const username = result.rows[0].username;
+          const token = jwt.sign({ id: id, username: username }, "jwtSecret", {
+            expiresIn: 300,
+          });
           req.session.user = result.rows[0];
-          console.log(req.session.user);
-          return res.send(result.rows[0]);
+          return res.send({ auth: true, token: token, result: result.rows[0] });
         } else
           return res.send({ message: "Wrong Username/Password combination" });
       });
@@ -77,6 +101,13 @@ app.post("/api/login", (req, res) => {
       return res.send({ message: "User does not exists!" });
     }
   });
+});
+
+app.get("/api/userInfo", verifyJWT, (req, res) => {
+  console.log(req.id);
+  const id = req.id;
+  const username = req.username;
+  return res.send("You are authenticated");
 });
 
 app.listen(5000, () => {
