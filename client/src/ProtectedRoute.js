@@ -1,20 +1,17 @@
 import React from "react";
 import { Route, Redirect } from "react-router-dom";
+import { useAuth } from "./AuthContext";
 
-function ProtectedRoute({ isAuth: isAuth, component: Component, ...rest }) {
+function ProtectedRoute({ component: Component, ...rest }) {
+  const { currentUser } = useAuth();
   return (
     <Route
       {...rest}
       render={(props) => {
-        if (isAuth) {
-          return <Component />;
-        } else {
-          return (
-            <Redirect to={{ pathname: "/", state: { from: props.location } }} />
-          );
-        }
+        console.log(currentUser);
+        return currentUser ? <Component {...props} /> : <Redirect to="/" />;
       }}
-    />
+    ></Route>
   );
 }
 

@@ -1,18 +1,21 @@
-import { BrowserRouter as Router, Route } from "react-router-dom";
+import { BrowserRouter as Router, Route, Switch } from "react-router-dom";
 import "./App.css";
 import Landing from "./pages/Landing";
 import Home from "./pages/Home";
 import ProtectedRoute from "./ProtectedRoute";
-import { useAuth } from "./AuthContext";
+import { AuthProvider } from "./AuthContext";
 
 function App() {
-  const { loggedIn } = useAuth();
-
   return (
-    <Router>
-      <Route path="/" exact render={(props) => <Landing />} />
-      <ProtectedRoute path="/home" component={Home} isAuth />
-    </Router>
+    <AuthProvider>
+      <Router>
+        <Switch>
+          <Route exact path="/" component={Landing} />
+          {/* <Route path="/home" component={Home} /> */}
+          <ProtectedRoute path="/home" component={Home} />
+        </Switch>
+      </Router>
+    </AuthProvider>
   );
 }
 
