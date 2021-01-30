@@ -70,7 +70,10 @@ const AuthProvider = ({ children }) => {
   };
 
   const setNewToken = (newToken) => {
-    setToken(newToken);
+    if (newToken !== token) {
+      console.log("set new token");
+      setToken(newToken);
+    }
   };
 
   const logout = () => {
