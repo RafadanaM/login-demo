@@ -223,6 +223,7 @@ app.post("/api/refresh_token", (req, res) => {
               expiresIn: "15s",
             }
           );
+          //TODO, refresh the refresh_token by creating a new refresh_token and then put it in db and send it as a cookie
           console.log(`New token :  ${new_token}`);
           return res.send({ auth: true, token: new_token });
         } else {
