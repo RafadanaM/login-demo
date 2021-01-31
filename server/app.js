@@ -40,10 +40,14 @@ const verifyJWT = (req, res, next) => {
   console.log(refreshToken);
   console.log("================");
 
+  //check whther token and refresh_tken exists
+  //I might need to change this
   if (token === "null" && refreshToken === undefined) {
+    //logout
     console.log("No Token");
     return res.send({ auth: false, message: "No Token" });
   } else {
+    //verify the access_token
     console.log("masuk else");
     jsonwebtoken.verify(token, "jwtSecret", (err, decoded) => {
       if (err) {
@@ -52,6 +56,7 @@ const verifyJWT = (req, res, next) => {
           .status(401)
           .send({ auth: false, message: "Authentication failed" });
       }
+      //pass the values
       console.log(decoded);
       req.id = decoded.id;
       req.token = token;
@@ -92,16 +97,20 @@ app.post("/api/login", (req, res) => {
   const username = req.body.username;
   const password = req.body.password;
 
+  //check whether user exists or not
   const selectUserQuery = "SELECT * FROM USERS where username = $1";
   pool.query(selectUserQuery, [username], (err, result) => {
     if (err) {
       return res.send({ message: "something happened" });
     }
+    //user exists
     if (result.rows.length > 0) {
+      //compare password
       bcrypt.compare(password, result.rows[0].password, (err, response) => {
         if (response) {
           const id = result.rows[0].id_user;
           const username = result.rows[0].username;
+          //create access_token
           const token = jsonwebtoken.sign(
             { id: id, username: username },
             "jwtSecret",
@@ -109,12 +118,13 @@ app.post("/api/login", (req, res) => {
               expiresIn: "15s",
             }
           );
-
+          //create refresh_token
           const refreshToken = jsonwebtoken.sign(
             { id: id, username: username },
             "jwtSecret",
             { expiresIn: "7d" }
           );
+          //insert refreshtoken to database
           const insertRefreshToken =
             "UPDATE USERS SET refresh_token = $1 WHERE id_user = $2";
           pool.query(insertRefreshToken, [refreshToken, id], (err, result) => {
@@ -123,6 +133,7 @@ app.post("/api/login", (req, res) => {
               return res.send("Error inserting");
             }
           });
+          //send refresh_token in cookie
           res.cookie("refresh_token", refreshToken, { httpOnly: true });
           // req.session.user = result.rows[0];
           return res.send({
@@ -130,13 +141,16 @@ app.post("/api/login", (req, res) => {
             token: token,
             user: result.rows[0],
           });
-        } else
+        }
+        //wrong combination
+        else
           return res.send({
             auth: false,
             message: "Wrong Username/Password combination",
           });
       });
     } else {
+      //user does not exists
       return res.send({ auth: false, message: "User does not exists!" });
     }
   });
@@ -170,30 +184,38 @@ app.get("/api/checkAuth", verifyJWT, (req, res) => {
 });
 
 app.post("/api/refresh_token", (req, res) => {
+  //get refresh_token from cookie
   const refreshToken = req.cookies.refresh_token;
   console.log("REFRESH");
   console.log(refreshToken);
   console.log("");
 
+  //verify refresh_token
   jsonwebtoken.verify(refreshToken, "jwtSecret", (err, decoded) => {
     if (err) {
       console.log(err);
       res.cookie("refresh_token", "", { httpOnly: true });
-      return res
-        .status(401)
-        .send({ auth: false, message: "Authentication failed" });
+      return res.send({
+        auth: false,
+        message: "Authentication failed",
+        token: "",
+      });
     } else {
       const id = decoded.id;
       const selectUser = "SELECT * FROM USERS WHERE id_user = $1";
-
+      //verify in db
       pool.query(selectUser, [id], (err, result) => {
         if (err) {
           console.log(err);
-          return res
-            .status(401)
-            .send({ auth: false, message: "Authentication failed" });
+          return res.send({
+            auth: false,
+            message: "Authentication failed",
+            token: "",
+          });
         }
+        //user exists
         if (result.rows.length > 0) {
+          //create new access_token
           const new_token = jsonwebtoken.sign(
             { id: result.rows[0].id_user, username: result.rows[0].username },
             "jwtSecret",
@@ -202,7 +224,13 @@ app.post("/api/refresh_token", (req, res) => {
             }
           );
           console.log(`New token :  ${new_token}`);
-          return res.send({ token: new_token });
+          return res.send({ auth: true, token: new_token });
+        } else {
+          return res.send({
+            auth: false,
+            message: "Authentication failed",
+            token: "",
+          });
         }
       });
     }
