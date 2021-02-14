@@ -1,11 +1,11 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useAuth } from "../AuthContext";
-import axios from "axios";
-
-axios.defaults.withCredentials = true;
+import axios from "../axios/config";
 
 function Home() {
-  const { logout, currentUser, token, setNewToken } = useAuth();
+  const { logout, currentUser, token, setNewToken, refreshToken } = useAuth();
+
+  //const [status, setStatus] = useState();
 
   const handleLogout = (e) => {
     e.preventDefault();
@@ -15,25 +15,35 @@ function Home() {
   const checkAuth = () => {
     console.log(`Token to be sent: ${token}`);
     axios
-      .get("http://localhost:5000/api/checkAuth", {
-        headers: { "x-access-token": token },
-      })
+      .get("/checkAuth")
       .then((response) => {
-        console.log(response);
-        setNewToken(response.data.token);
+        console.log(response.data.token);
+        // setStatus(response.data);
+        //setNewToken(response.data.token);
       })
       .catch((e) => {
         console.log(e);
       });
   };
 
+  // useEffect(() => {
+  //   checkAuth();
+  // }, []);
+
   return (
     <div>
+      {/* {`console  ${console.log(status)}`} */}
       <h1>Home</h1>
       <h2>Welcome {currentUser.username}</h2>
       <h2>Token: {token}</h2>
+      {/* {status.map((content) => (
+        <h2>{content.message}</h2>
+      ))} */}
+      {/* <h2>{status === undefined ? "asd" : status.message}</h2> */}
+
       <button onClick={checkAuth}>Check Auth</button>
       <button onClick={handleLogout}>Logout</button>
+      <button onClick={refreshToken}>refresh</button>
     </div>
   );
 }
