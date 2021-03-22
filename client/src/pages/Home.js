@@ -3,7 +3,7 @@ import { useAuth } from "../AuthContext";
 import axios from "../axios/config";
 
 function Home() {
-  const { logout, currentUser, token, setNewToken, refreshToken } = useAuth();
+  const { logout, currentUser, refreshToken } = useAuth();
 
   //const [status, setStatus] = useState();
 
@@ -12,30 +12,32 @@ function Home() {
     logout();
   };
 
+  const handleRefreshToken = (e) => {
+    e.preventDefault();
+    refreshToken();
+  };
+
   const checkAuth = () => {
-    console.log(`Token to be sent: ${token}`);
     axios
       .get("/checkAuth")
       .then((response) => {
         console.log(response.data.token);
-        // setStatus(response.data);
-        //setNewToken(response.data.token);
       })
       .catch((e) => {
         console.log(e);
       });
   };
 
-  // useEffect(() => {
-  //   checkAuth();
-  // }, []);
+  useEffect(() => {
+    checkAuth();
+  }, []);
 
   return (
     <div>
       {/* {`console  ${console.log(status)}`} */}
       <h1>Home</h1>
       <h2>Welcome {currentUser.username}</h2>
-      <h2>Token: {token}</h2>
+
       {/* {status.map((content) => (
         <h2>{content.message}</h2>
       ))} */}
@@ -43,7 +45,7 @@ function Home() {
 
       <button onClick={checkAuth}>Check Auth</button>
       <button onClick={handleLogout}>Logout</button>
-      <button onClick={refreshToken}>refresh</button>
+      <button onClick={handleRefreshToken}>Refresh Token</button>
     </div>
   );
 }
